@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -25,6 +26,9 @@ import com.example.liamapp.ui.theme.LiamAppTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Instalar Splash Screen de la API oficial antes de super.onCreate
+        installSplashScreen()
+        
         super.onCreate(savedInstanceState)
         setContent {
             LiamAppTheme {

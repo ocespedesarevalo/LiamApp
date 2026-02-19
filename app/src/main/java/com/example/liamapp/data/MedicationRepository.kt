@@ -9,10 +9,23 @@ class MedicationRepository(private val medicationDao: MedicationDao) {
 
     fun getAllMedications(): Flow<List<Medication>> = medicationDao.getAllMedications()
 
+    fun getMedicationsForConsultation(consultationId: Long): Flow<List<Medication>> = 
+        medicationDao.getMedicationsForConsultation(consultationId)
+
+    suspend fun getMedicationById(id: Long): Medication? = medicationDao.getMedicationById(id)
+
     fun getMedicationHistory(medicationId: Long): Flow<List<MedicationHistory>> = medicationDao.getMedicationHistory(medicationId)
 
     suspend fun insertMedication(medication: Medication): Long {
         return medicationDao.insertMedication(medication)
+    }
+
+    suspend fun updateMedication(medication: Medication) {
+        medicationDao.updateMedication(medication)
+    }
+
+    suspend fun deleteMedication(medication: Medication) {
+        medicationDao.deleteMedication(medication)
     }
 
     suspend fun insertMedicationHistory(history: MedicationHistory): Long {

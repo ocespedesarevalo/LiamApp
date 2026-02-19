@@ -5,17 +5,24 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+    primary = MedicalPrimary,
+    secondary = HealthBlue,
+    tertiary = MedicalTertiary,
+    background = Color(0xFF1A1C1C),
+    surface = Color(0xFF1A1C1C),
+    error = MedicalError
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
+    primary = MedicalPrimary,
+    secondary = HealthBlue,
+    tertiary = MedicalTertiary,
+    background = MedicalBackground,
+    surface = MedicalSurface,
+    error = MedicalError
 )
 
 @Composable

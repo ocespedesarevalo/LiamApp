@@ -1,0 +1,14 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Círculo de fondo suave -->
+    <path
+        android:fillColor="#E0F2F1"
+        android:pathData="M12,12m-11,0a11,11 0,1 0,22 0a11,11 0,1 0,-22 0" />
+    <!-- La Cruz Médica en Verde -->
+    <path
+        android:fillColor="#00796B"
+        android:pathData="M19,10.5h-4.5v-4.5c0,-0.83 -0.67,-1.5 -1.5,-1.5h-2c-0.83,0 -1.5,0.67 -1.5,1.5v4.5h-4.5c-0.83,0 -1.5,0.67 -1.5,1.5v2c0,0.83 0.67,1.5 1.5,1.5h4.5v4.5c0,0.83 0.67,1.5 1.5,1.5h2c0.83,0 1.5,-0.67 1.5,-1.5v-4.5h4.5c0.83,0 1.5,-0.67 1.5,-1.5v-2c0,-0.83 -0.67,-1.5 -1.5,-1.5z" />
+</vector>

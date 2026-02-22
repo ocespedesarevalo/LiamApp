@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.liamapp.data.MedicationRepository
 import com.example.liamapp.data.model.Medication
+import com.example.liamapp.notifications.AlarmScheduler
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -27,7 +28,10 @@ data class MedicationUiState(
     val errorMessage: String? = null
 )
 
-class MedicationViewModel(private val repository: MedicationRepository) : ViewModel() {
+class MedicationViewModel(
+    private val repository: MedicationRepository,
+    private val alarmScheduler: AlarmScheduler
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MedicationUiState())
     val uiState: StateFlow<MedicationUiState> = _uiState.asStateFlow()
@@ -102,6 +106,7 @@ class MedicationViewModel(private val repository: MedicationRepository) : ViewMo
 
     fun deleteMedication(medication: Medication) {
         viewModelScope.launch {
+            alarmScheduler.cancel(medication)
             repository.deleteMedication(medication)
         }
     }
@@ -127,11 +132,18 @@ class MedicationViewModel(private val repository: MedicationRepository) : ViewMo
                     additionalNotes = currentState.notes,
                     startTime = currentState.startTime
                 )
-                if (currentState.isEditing) {
+                
+                val id = if (currentState.isEditing) {
                     repository.updateMedication(medication)
+                    medication.id
                 } else {
                     repository.insertMedication(medication)
                 }
+                
+                // Programar la alarma con el ID correcto
+                val medicationWithId = if (!currentState.isEditing) medication.copy(id = id) else medication
+                alarmScheduler.schedule(medicationWithId)
+                
                 _uiState.update { it.copy(isMedicationSaved = true) }
             } catch (e: Exception) {
                 _uiState.update { it.copy(errorMessage = "Error al guardar el medicamento: ${e.message}") }
@@ -140,11 +152,14 @@ class MedicationViewModel(private val repository: MedicationRepository) : ViewMo
     }
 }
 
-class MedicationViewModelFactory(private val repository: MedicationRepository) : ViewModelProvider.Factory {
+class MedicationViewModelFactory(
+    private val repository: MedicationRepository,
+    private val alarmScheduler: AlarmScheduler
+) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(MedicationViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return MedicationViewModel(repository = repository) as T
+            return MedicationViewModel(repository, alarmScheduler) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

@@ -18,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.liamapp.data.model.Consultation
+import com.example.liamapp.data.model.Medication
 import com.example.liamapp.ui.medication.MedicationViewModel
 import com.example.liamapp.ui.medication.MedicationItem
 import java.text.SimpleDateFormat
@@ -28,6 +29,7 @@ import java.util.*
 fun ConsultationListScreen(
     navController: NavController, 
     viewModel: ConsultationViewModel,
+    medicationViewModel: MedicationViewModel,
     modifier: Modifier = Modifier
 ) {
     val consultations by viewModel.allConsultations.collectAsState(initial = emptyList())
@@ -110,8 +112,12 @@ fun ConsultationListScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(consultations) { consultation ->
+                    val medsByConsultation by medicationViewModel.getMedicationsForConsultation(consultation.id)
+                        .collectAsState(initial = emptyList())
+                    
                     ConsultationCard(
                         consultation = consultation,
+                        medications = medsByConsultation,
                         dateString = dateFormatter.format(Date(consultation.date)),
                         onEdit = {
                             viewModel.startEditing(consultation)
@@ -129,16 +135,33 @@ fun ConsultationListScreen(
 @Composable
 fun ConsultationCard(
     consultation: Consultation,
+    medications: List<Medication>,
     dateString: String,
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
+    // Lógica de colorimetría:
+    // Rojo: Falta información clave (Doctor o Diagnóstico vacío)
+    // Naranja: Faltan medicamentos asociados
+    // Verde: Todo completo
+    val cardColor = when {
+        consultation.doctorName.isBlank() || consultation.diagnosis.isBlank() -> Color(0xFFFFEBEE) // Rojo muy suave
+        medications.isEmpty() -> Color(0xFFFFF3E0) // Naranja muy suave
+        else -> Color(0xFFE8F5E9) // Verde muy suave
+    }
+    
+    val indicatorColor = when {
+        consultation.doctorName.isBlank() || consultation.diagnosis.isBlank() -> Color(0xFFD32F2F) // Rojo
+        medications.isEmpty() -> Color(0xFFF57C00) // Naranja
+        else -> Color(0xFF388E3C) // Verde
+    }
+
     ElevatedCard(
         onClick = onEdit,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = cardColor
         )
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -147,18 +170,18 @@ fun ConsultationCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Default.Person, 
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                    Box(
+                        modifier = Modifier
+                            .size(12.dp)
+                            .background(indicatorColor, RoundedCornerShape(50))
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        text = consultation.doctorName,
+                        text = if(consultation.doctorName.isBlank()) "Sin Doctor" else consultation.doctorName,
                         style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1
                     )
                 }
                 IconButton(onClick = onDelete) {
@@ -176,21 +199,38 @@ fun ConsultationCard(
                 Icon(
                     Icons.Default.Info, 
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.secondary,
+                    tint = indicatorColor.copy(alpha = 0.7f),
                     modifier = Modifier.size(16.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = consultation.diagnosis,
+                    text = if(consultation.diagnosis.isBlank()) "Falta Diagnóstico" else consultation.diagnosis,
                     style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 2
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            // Estado de medicamentos
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Default.List, 
+                    contentDescription = null,
+                    tint = if(medications.isEmpty()) indicatorColor else Color.Gray.copy(alpha = 0.5f),
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = if(medications.isEmpty()) "Sin medicamentos recetados" else "${medications.size} medicamentos añadidos",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if(medications.isEmpty()) indicatorColor else Color.Gray
                 )
             }
             
             Spacer(modifier = Modifier.height(12.dp))
-            
-            Divider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 0.5.dp)
-            
+            Divider(color = indicatorColor.copy(alpha = 0.1f), thickness = 0.5.dp)
             Spacer(modifier = Modifier.height(12.dp))
             
             Row(
@@ -204,9 +244,9 @@ fun ConsultationCard(
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                 )
                 Text(
-                    text = "Ver detalles >",
+                    text = if (indicatorColor == Color(0xFF388E3C)) "Completo" else "Completar >",
                     style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = indicatorColor,
                     fontWeight = FontWeight.SemiBold
                 )
             }
@@ -240,7 +280,7 @@ fun AddConsultationScreen(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text(if (uiState.isEditing) "Editar Consulta" else "Nueva Consulta") },
+                title = { Text(if (uiState.isEditing) "Detalles de Consulta" else "Nueva Consulta") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Atrás")
@@ -425,7 +465,7 @@ fun AddConsultationScreen(
                     shape = RoundedCornerShape(16.dp)
                 ) { 
                     Text(
-                        if (uiState.isEditing) "Actualizar Consulta" else "Guardar Consulta",
+                        if (uiState.isEditing) "Guardar Cambios" else "Crear Consulta",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     ) 
